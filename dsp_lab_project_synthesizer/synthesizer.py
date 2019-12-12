@@ -72,7 +72,12 @@ def on_press(event):
         index = ord(event.char) - ord('1')
         ISPRESS[index] = 1
     notes.set(index)
-    L_freq.config(text = 'Cut-off frequency: ' + str(round(cutoff_freq[notes.get()], 2)))
+    if notes.get() != -1:
+        L_freq.config(text = 'Cut-off frequency: ' + str(round(cutoff_freq[notes.get()], 2)))
+        L_freq_cur.config(text='Key frequency you pressed: ' + str(notes.get()))
+    else:
+        L_freq.config(text='Cut-off frequency: 0')
+        L_freq_cur.config(text='Key frequency you pressed: 0')
 
 def on_release(event):
     global ISPRESS
@@ -88,6 +93,7 @@ def on_release(event):
         ISPRESS[index] = 0
     notes.set(-1)
     L_freq.config(text = 'Cut-off frequency: 0')
+    L_freq_cur.config(text='Key frequency you pressed: 0' )
 
 def quit_fun():
     global CONTINUE
@@ -119,9 +125,11 @@ RB_hp_fil = Tk.Radiobutton(filter, text = 'High pass filter', value = 2, variabl
 # Select cut-off frequency
 freq_v = Tk.DoubleVar()
 freq = Tk.LabelFrame(root, text = ' Cut-off frequency ', width = 250, height=200).grid(row = 1, column = 3, pady = 10, padx = 10)
-L_ratio = Tk.Label(freq, text = 'Ratio', font = ('', 14)).place(x = 600, y = 115)
+L_ratio = Tk.Label(freq, text = 'Ratio', font = ('', 14)).place(x = 575, y = 115)
 L_freq = Tk.Label(freq, text = 'Cut-off frequency: ' + str(freq_v.get()), font = ('', 14))
-L_freq.place(x = 600, y = 180)
+L_freq.place(x = 575, y = 160)
+L_freq_cur = Tk.Label(freq, text = 'Key frequency you pressed: 0', font = ('', 14))
+L_freq_cur.place(x = 575, y = 200)
 def fun_freq(v):
     global cutoff_freq
     global notes
@@ -129,10 +137,11 @@ def fun_freq(v):
         cutoff_freq[i] = (Fs * 0.45) if (cutoff_freq[i] > Fs * 0.45) else (Freqs[i] * freq_v.get())
     if notes.get() != -1:
         L_freq.config(text = 'Cut-off frequency: ' + str(round(cutoff_freq[notes.get()], 2)))
+        L_freq_cur.config(text = 'Key frequency you pressed: ' + str(notes.get()))
     else:
-        freq = round(cutoff_freq[notes.get()], 2)
         L_freq.config(text = 'Cut-off frequency: 0')
-S_ratio = Tk.Scale(freq, variable = freq_v, from_ = 0.7, to = 10, resolution = 0.1, orient = Tk.HORIZONTAL, command = fun_freq).place(x = 650, y = 100)
+        L_freq_cur.config(text='Key frequency you pressed: 0')
+S_ratio = Tk.Scale(freq, variable = freq_v, from_ = 0.7, to = 10, resolution = 0.1, orient = Tk.HORIZONTAL, command = fun_freq).place(x = 625, y = 100)
 
 # Select parameters of ADSR
 A = Tk.DoubleVar()
