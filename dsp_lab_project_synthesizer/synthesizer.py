@@ -11,6 +11,13 @@ from oscillator import sinwave_gen, sawtooth_gen, square_gen, triangle_gen
 
 Fs = 8000           # rate (samples/second)
 
+# set frequencies for 12 notes
+Freqs = np.zeros(12)
+Freqs[0] = 440.0
+r = 2 ** (1.0/12.0)
+for i in range(1,12):
+    Freqs[i] = Freqs[i-1] * r
+
 def fun_wave():
     global wave_type
     if wave_v.get() == 0:
@@ -36,12 +43,6 @@ def fun_fil():
         filter_type = 'highpass'
     print('The filter type is:' + filter_type)
 
-def fun_freq(v):
-    global cutoff_freq
-    for i in range(0, 12):
-        cutoff_freq[i] = (Fs * 0.45) if (cutoff_freq[i] > Fs * 0.45) else (Freqs[i] * freq_v.get())
-    L_freq.config(text = 'Cut-off frequency: ' + str(cutoff_freq))
-
 def getvalue_fun(event):
     global attack_s
     global decay_s
@@ -53,6 +54,8 @@ def getvalue_fun(event):
 def on_press(event):
     global CONTINUE
     global ISPRESS
+    global cutoff_freq
+    global notes
     index = -1
     if event.char == 'q':
         CONTINUE = False
@@ -69,6 +72,7 @@ def on_press(event):
         index = ord(event.char) - ord('1')
         ISPRESS[index] = 1
     notes.set(index)
+    L_freq.config(text = 'Cut-off frequency: ' + str(round(cutoff_freq[notes.get()], 2)))
 
 def on_release(event):
     global ISPRESS
@@ -82,6 +86,8 @@ def on_release(event):
     elif '1' <= event.char <= '9':
         index = ord(event.char) - ord('1')
         ISPRESS[index] = 0
+    notes.set(-1)
+    L_freq.config(text = 'Cut-off frequency: 0')
 
 def quit_fun():
     global CONTINUE
@@ -116,6 +122,16 @@ freq = Tk.LabelFrame(root, text = ' Cut-off frequency ', width = 250, height=200
 L_ratio = Tk.Label(freq, text = 'Ratio', font = ('', 14)).place(x = 600, y = 115)
 L_freq = Tk.Label(freq, text = 'Cut-off frequency: ' + str(freq_v.get()), font = ('', 14))
 L_freq.place(x = 600, y = 180)
+def fun_freq(v):
+    global cutoff_freq
+    global notes
+    for i in range(0, 12):
+        cutoff_freq[i] = (Fs * 0.45) if (cutoff_freq[i] > Fs * 0.45) else (Freqs[i] * freq_v.get())
+    if notes.get() != -1:
+        L_freq.config(text = 'Cut-off frequency: ' + str(round(cutoff_freq[notes.get()], 2)))
+    else:
+        freq = round(cutoff_freq[notes.get()], 2)
+        L_freq.config(text = 'Cut-off frequency: 0')
 S_ratio = Tk.Scale(freq, variable = freq_v, from_ = 0.7, to = 10, resolution = 0.1, orient = Tk.HORIZONTAL, command = fun_freq).place(x = 650, y = 100)
 
 # Select parameters of ADSR
@@ -134,9 +150,9 @@ L_A = Tk.Label(adsr, text = 'Attack time').place(x = 100, y = 310)
 S_A = Tk.Scale(adsr, variable = A, from_ = 0.001, to = 0.1, resolution = 0.001, command = getvalue_fun).place(x = 100, y = 340)
 L_D = Tk.Label(adsr, text = 'Decay time').place(x = 250, y = 310)
 S_D = Tk.Scale(adsr, variable = D, from_ = 0.001, to = 1.0, resolution = 0.001, command = getvalue_fun).place(x = 250, y = 340)
-L_S = Tk.Label(adsr, text = 'Sustain_level').place(x = 400, y = 310)
+L_S = Tk.Label(adsr, text = 'Sustain level').place(x = 400, y = 310)
 S_S = Tk.Scale(adsr, variable = S, from_ = 0.0, to = 0.999, resolution = 0.001, command = getvalue_fun).place(x = 400, y = 340)
-L_R = Tk.Label(adsr, text = 'Release_time').place(x = 550, y = 310)
+L_R = Tk.Label(adsr, text = 'Release time').place(x = 550, y = 310)
 S_R = Tk.Scale(adsr, variable = R, from_ = 0.001, to = 1.0, resolution = 0.001, command = getvalue_fun).place(x = 550, y = 340)
 
 # Piano keyboard
@@ -154,14 +170,6 @@ for i in range(12):
 # Quit
 B_esc = Tk.Button(root, text = 'QUIT', command = quit_fun).grid(row = 5, column = 1,rowspan=1, columnspan=5, padx = 10, pady = 10)
 
-
-
-# set frequencies for 12 notes
-Freqs = np.zeros(12)
-Freqs[0] = 440.0
-r = 2 ** (1.0/12.0)
-for i in range(1,12):
-    Freqs[i] = Freqs[i-1] * r
 
 # ADSR parameters
 G = np.zeros(12)
@@ -244,7 +252,7 @@ while CONTINUE:
     output_block_sum = np.clip(output_block_sum, MINVALUE, MAXVALUE)
 
     # Update the plot
-    freq_idx = notes.get() if notes.get() != -1 else 0
+    freq_idx = 0 if notes.get() == -1 else notes.get()
     my_line.set_ydata(output_block_sum)
     my_plot.set_title('Frequency = %.2f' % Freqs[freq_idx])   
 
